@@ -25,6 +25,7 @@
  * 
  */
 
+use EasyRdf\Graph;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Request;
@@ -60,10 +61,14 @@ $redirects = array_merge([$url], $response->getHeader('X-Guzzle-Redirect-History
 $url = array_pop($redirects);
 
 // prepare an oxgarage request data
+$graph = new Graph();
+$graph->parse(file_get_contents($url . '/fcr:metadata'));
+$meta = $graph->resource($url);
+$filename = (string) $meta->getLiteral('http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#filename');
 $reqUrl = $config->get('oxgarageUrl') . $formats[$format] . '/conversion';
 $data = [
     'multipart' => [
-        ['name' => 'filetoconvert', 'filename' => 'input.xml', 'contents' => fopen($url, 'r')]
+        ['name' => 'filetoconvert', 'filename' => $filename, 'contents' => fopen($url, 'r')]
     ]
 ];
 
