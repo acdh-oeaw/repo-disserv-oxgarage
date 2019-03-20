@@ -27,6 +27,7 @@
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Exception\RequestException;
 use zozlak\util\Config;
 
@@ -53,14 +54,10 @@ if (!preg_match('|^https?://|', $url)) {
 }
 
 // resolve ARCHE id to the actual URI
-$client = new Client(['allow_redirects' => false, 'verify' => false]);
-do {
-    $response = $client->head($url);
-    $location = $response->getHeader('Location');
-    if (is_array($location) && count($location) > 0) {
-    	$url = $location[0];
-    }
-} while ($response->getStatusCode() >= 300 && $response->getStatusCode() < 400);
+$client = new Client(['allow_redirects' => ['track_redirects' => true], 'verify' => false]);
+$response = $client->send(new Request('HEAD', $url));
+$redirects = array_merge([$url], $response->getHeader('X-Guzzle-Redirect-History'));
+$url = array_pop($redirects);
 
 // prepare an oxgarage request data
 $reqUrl = $config->get('oxgarageUrl') . $formats[$format] . '/conversion';
