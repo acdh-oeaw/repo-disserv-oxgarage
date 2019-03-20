@@ -56,7 +56,12 @@ if (!preg_match('|^https?://|', $url)) {
 
 // resolve ARCHE id to the actual URI
 $client = new Client(['allow_redirects' => ['track_redirects' => true], 'verify' => false]);
-$response = $client->send(new Request('HEAD', $url));
+try {
+    $response = $client->send(new Request('HEAD', $url));
+} catch (RequestException $ex) {
+    header('HTTP/1.1 ' . $ex->getCode() . ' ARCHE resource resolution error');
+    exit($ex->getMessage() . "\n");
+}
 $redirects = array_merge([$url], $response->getHeader('X-Guzzle-Redirect-History'));
 $url = array_pop($redirects);
 
@@ -93,7 +98,10 @@ $options = [
 $client = new Client($options);
 try {
     $client->request('POST', $reqUrl, $data);
-} catch (RequestException $e) { }
+} catch (RequestException $e) {
+    header('HTTP/1.1 ' . $ex->getCode() . ' Oxgarage request error');
+    echo $ex->getMessage() . "\n";
+}
 
 if (is_resource($output)) {
     fclose($output);
